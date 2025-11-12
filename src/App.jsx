@@ -11,7 +11,7 @@ import BlogPage from './pages/BlogPage';
 import PrivacyPage from './pages/PrivacyPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import './styles/website.css';
-
+//comment
 // Simple session hook using cookie-based auth
 const useSession = () => {
   const [loading, setLoading] = useState(true);
