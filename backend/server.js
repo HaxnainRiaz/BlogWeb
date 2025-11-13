@@ -73,14 +73,38 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: '10mb' }));
 app.use(cookieParser());
 
+// Request timeout middleware - set a reasonable timeout for database operations
+app.use((req, res, next) => {
+  // Set socket timeout to 30 seconds (enough for database operations)
+  req.setTimeout(30000);
+  res.setTimeout(30000);
+  next();
+});
+
 app.use('/api/auth', authRoutes);
 app.use('/api/blogs', blogRoutes);
 
 app.get('/', (req, res) => res.send('API Running'));
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'healthy', 
+    timestamp: new Date().toISOString(),
+    mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
+  });
+});
 
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('Error:', err);
+  
+  // Handle MongoDB timeout errors
+  if (err.message && err.message.includes('buffering timed out')) {
+    return res.status(503).json({
+      error: 'Database connection timeout. Please try again.',
+      status: 503
+    });
+  }
+  
   res.status(err.status || 500).json({
     error: err.message || 'Internal server error',
     status: err.status || 500
