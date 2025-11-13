@@ -76,7 +76,7 @@ const PublicRoute = ({ children }) => {
 };
 
 function App() {
-  const { loading, user } = useSession();
+  const { user } = useSession();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const handleLogout = async () => {

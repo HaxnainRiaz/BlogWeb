@@ -3,7 +3,6 @@ import React, { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Bold, Italic, Underline, Strikethrough,
-  Highlighter,
   AlignLeft, AlignCenter, AlignRight, AlignJustify,
   List, ListOrdered,
   Square, Minus,
@@ -67,36 +66,6 @@ const FormattingToolbar = ({
     { label: "2.0", value: 2.0 },
     { label: "2.5", value: 2.5 },
     { label: "3.0", value: 3.0 }
-  ];
-
-  const paragraphSpacings = [
-    { label: "0 pt", value: "0" },
-    { label: "6 pt", value: "6pt" },
-    { label: "12 pt", value: "12pt" },
-    { label: "18 pt", value: "18pt" },
-    { label: "24 pt", value: "24pt" }
-  ];
-
-  const columnOptions = [
-    { label: "1 Column", value: 1 },
-    { label: "2 Columns", value: 2 },
-    { label: "3 Columns", value: 3 }
-  ];
-
-  const borderStyles = [
-    { label: "None", value: "none" },
-    { label: "Solid", value: "solid" },
-    { label: "Dashed", value: "dashed" },
-    { label: "Dotted", value: "dotted" },
-    { label: "Double", value: "double" }
-  ];
-
-  const borderColors = [
-    { label: "Black", value: "#000000" },
-    { label: "Gray", value: "#666666" },
-    { label: "Blue", value: "#3B82F6" },
-    { label: "Red", value: "#EF4444" },
-    { label: "Green", value: "#10B981" }
   ];
 
   // Table grid for visual selection (Word-like 10x10)
@@ -389,11 +358,6 @@ const FormattingToolbar = ({
     executeCommand('toggleHeaderColumn');
   };
 
-  const toggleHeaderCell = () => {
-    if (!editor) return;
-    executeCommand('toggleHeaderCell');
-  };
-
   // Quick table insertion with grid
   const handleGridSelection = (rows, cols) => {
     insertTable(rows, cols);
@@ -426,58 +390,6 @@ const FormattingToolbar = ({
     executeCommand('toggleStrike');
   };
 
-  const toggleSuper = () => {
-    if (!editor) return;
-
-    try {
-      const existing = editor.getAttributes("textStyle")?.style || "";
-      const isActive = /vertical-align:\s*super/.test(existing);
-
-      if (isActive) {
-        const cleaned = existing
-          .replace(/vertical-align:\s*super;?/g, "")
-          .replace(/font-size:\s*0\.8em;?/g, "")
-          .trim()
-          .replace(/;+/g, ';')
-          .replace(/;$/, '');
-        executeCommand('setMark', 'textStyle', { style: cleaned || null });
-      } else {
-        const style = existing ?
-          `${existing}; vertical-align: super; font-size: 0.8em;` :
-          "vertical-align: super; font-size: 0.8em;";
-        executeCommand('setMark', 'textStyle', { style });
-      }
-    } catch (error) {
-      console.error('Error in toggleSuper:', error);
-    }
-  };
-
-  const toggleSub = () => {
-    if (!editor) return;
-
-    try {
-      const existing = editor.getAttributes("textStyle")?.style || "";
-      const isActive = /vertical-align:\s*sub/.test(existing);
-
-      if (isActive) {
-        const cleaned = existing
-          .replace(/vertical-align:\s*sub;?/g, "")
-          .replace(/font-size:\s*0\.8em;?/g, "")
-          .trim()
-          .replace(/;+/g, ';')
-          .replace(/;$/, '');
-        executeCommand('setMark', 'textStyle', { style: cleaned || null });
-      } else {
-        const style = existing ?
-          `${existing}; vertical-align: sub; font-size: 0.8em;` :
-          "vertical-align: sub; font-size: 0.8em;";
-        executeCommand('setMark', 'textStyle', { style });
-      }
-    } catch (error) {
-      console.error('Error in toggleSub:', error);
-    }
-  };
-
   const handleTextColorChange = (e) => {
     const color = e.target.value;
     if (onTextColorChange) {
@@ -495,164 +407,6 @@ const FormattingToolbar = ({
     }
     if (editor) {
       executeCommand('setHighlight', { color });
-    }
-  };
-
-  const clearHighlight = () => {
-    if (editor) {
-      executeCommand('unsetHighlight');
-    }
-  };
-
-  const indent = () => {
-    if (!editor) return;
-
-    try {
-      const { state } = editor;
-      const node = state.selection.$from.parent;
-      const curr = node.attrs.style || "";
-      const match = /margin-left:\s*([\d.]+)in/.exec(curr);
-      const curVal = match ? parseFloat(match[1]) : 0;
-      const next = `${curVal + 0.5}in`;
-
-      executeCommand('updateAttributes', node.type.name, {
-        style: `margin-left: ${next};`
-      });
-    } catch (error) {
-      console.error('Error in indent:', error);
-    }
-  };
-
-  const outdent = () => {
-    if (!editor) return;
-
-    try {
-      const { state } = editor;
-      const node = state.selection.$from.parent;
-      const curr = node.attrs.style || "";
-      const match = /margin-left:\s*([\d.]+)in/.exec(curr);
-      const curVal = match ? parseFloat(match[1]) : 0;
-      const nextVal = Math.max(0, curVal - 0.5);
-      const next = nextVal ? `margin-left: ${nextVal}in;` : "";
-
-      executeCommand('updateAttributes', node.type.name, {
-        style: next
-      });
-    } catch (error) {
-      console.error('Error in outdent:', error);
-    }
-  };
-
-  const setFirstLineIndent = () => {
-    if (!editor) return;
-
-    try {
-      const { state } = editor;
-      const node = state.selection.$from.parent;
-      const curr = node.attrs.style || "";
-      const match = /text-indent:\s*([\d.]+)in/.exec(curr);
-      const curVal = match ? parseFloat(match[1]) : 0;
-      const next = `${curVal + 0.5}in`;
-
-      executeCommand('updateAttributes', node.type.name, {
-        style: `${curr.replace(/text-indent:\s*[\d.]+in;?/, '')} text-indent: ${next};`.trim()
-      });
-    } catch (error) {
-      console.error('Error in setFirstLineIndent:', error);
-    }
-  };
-
-  const setHangingIndent = () => {
-    if (!editor) return;
-
-    try {
-      const { state } = editor;
-      const node = state.selection.$from.parent;
-      const curr = node.attrs.style || "";
-      const marginMatch = /margin-left:\s*([\d.]+)in/.exec(curr);
-      const textIndentMatch = /text-indent:\s*([\d.-]+)in/.exec(curr);
-
-      const marginVal = marginMatch ? parseFloat(marginMatch[1]) : 0;
-      const textIndentVal = textIndentMatch ? parseFloat(textIndentMatch[1]) : 0;
-      const newTextIndent = textIndentVal - 0.5;
-
-      let newStyle = curr
-        .replace(/text-indent:\s*[\d.-]+in;?/g, '')
-        .replace(/margin-left:\s*[\d.]+in;?/g, '')
-        .trim();
-
-      newStyle += ` margin-left: ${marginVal + 0.5}in; text-indent: ${newTextIndent}in;`;
-
-      executeCommand('updateAttributes', node.type.name, {
-        style: newStyle.trim()
-      });
-    } catch (error) {
-      console.error('Error in setHangingIndent:', error);
-    }
-  };
-
-  const insertPageBreak = () => {
-    if (!editor) return;
-
-    try {
-      executeCommand('setHardBreak');
-      executeCommand('insertContent', '<div style="page-break-before: always; height: 0;"></div>');
-    } catch (error) {
-      console.error('Error in insertPageBreak:', error);
-    }
-  };
-
-  const insertSectionBreak = () => {
-    if (!editor) return;
-
-    try {
-      executeCommand('setHardBreak');
-      executeCommand('insertContent', '<div style="border-top: 2px dashed #ccc; margin: 20px 0; padding: 10px 0; text-align: center; color: #666;">Section Break</div>');
-    } catch (error) {
-      console.error('Error in insertSectionBreak:', error);
-    }
-  };
-
-  const setParagraphSpacing = (type, value) => {
-    if (!editor) return;
-
-    try {
-      const { state } = editor;
-      const node = state.selection.$from.parent;
-      const curr = node.attrs.style || "";
-
-      const cleaned = curr
-        .replace(new RegExp(`margin-${type}:\\s*[^;]+;?`, 'g'), '')
-        .trim();
-
-      const newStyle = value ? `${cleaned} margin-${type}: ${value};` : cleaned;
-
-      executeCommand('updateAttributes', node.type.name, {
-        style: newStyle.trim()
-      });
-    } catch (error) {
-      console.error('Error in setParagraphSpacing:', error);
-    }
-  };
-
-  const setColumns = (numColumns) => {
-    if (!editor) return;
-
-    try {
-      const { state } = editor;
-      const node = state.selection.$from.parent;
-
-      if (numColumns === 1) {
-        executeCommand('updateAttributes', node.type.name, {
-          style: (node.attrs.style || '').replace(/column-count:\s*\d+;?\s*/g, '')
-        });
-      } else {
-        executeCommand('updateAttributes', node.type.name, {
-          style: `${node.attrs.style || ''} column-count: ${numColumns}; column-gap: 20px;`.trim()
-        });
-      }
-    } catch (error) {
-      console.error('Error in setColumns:', error);
     }
   };
 

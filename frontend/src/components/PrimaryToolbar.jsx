@@ -2,24 +2,9 @@ import React from 'react';
 import { Undo2, Redo2, Scissors, Copy, ClipboardPaste, Maximize2, Minimize2 } from 'lucide-react';
 
 const PrimaryToolbar = ({ editor, showToast, onFullscreenToggle, isFullscreen }) => {
-  const STORAGE_KEY = "editorContentArea.pages.v1";
-
   // Safely compute availability for undo/redo to avoid null editor errors
   const canUndo = !!(editor && editor.can && typeof editor.can === 'function' && editor.can().undo && editor.can().undo());
   const canRedo = !!(editor && editor.can && typeof editor.can === 'function' && editor.can().redo && editor.can().redo());
-
-  const sanitizeHtml = (html) => {
-    if (!html) return "";
-    let out = html;
-    out = out.replace(/\sstyle="[^"]*background[^"]*"/gi, (m) => {
-      const cleaned = m
-        .replace(/background-color\s*:[^;"]*;?/gi, "")
-        .replace(/background\s*:[^;"]*;?/gi, "");
-      return cleaned === ' style=""' ? "" : cleaned;
-    });
-    out = out.replace(/[\u200B\uFEFF]/g, "");
-    return out;
-  };
   const handleNewDocument = () => {
     editor?.commands?.clearContent();
   };

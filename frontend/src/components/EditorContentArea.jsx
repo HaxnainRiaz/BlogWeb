@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { EditorContent } from "@tiptap/react";
-import { ChevronLeft, ChevronRight, Settings, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 
 export default function EditorContentArea({
   editor, // Use the main editor instance from parent
@@ -200,34 +200,6 @@ export default function EditorContentArea({
     }
   }, [getMergedHTML, addPage]);
 
-  // Sanitize HTML to remove unwanted backgrounds and zero-widths
-  const sanitizeHtml = useCallback((html) => {
-    if (!html) return "";
-    let out = html;
-    // Remove inline background styles
-    out = out.replace(/\sstyle="[^"]*background[^"]*"/gi, (m) => {
-      const cleaned = m
-        .replace(/background-color\s*:[^;"]*;?/gi, "")
-        .replace(/background\s*:[^;"]*;?/gi, "");
-      return cleaned === ' style=""' ? "" : cleaned;
-    });
-    // Remove zero-width spaces
-    out = out.replace(/[\u200B\uFEFF]/g, "");
-    return out;
-  }, []);
-
-  // Insert a manual page break after current active page
-  const insertPageBreak = useCallback(() => {
-    const idx = Math.max(0, activePage);
-    addPage(idx, "<p></p>");
-    setTimeout(() => {
-      const nextIndex = Math.min(pagesRef.current.length - 1, idx + 1);
-      setActivePage(nextIndex);
-      setVersion((v) => v + 1);
-      saveStateDebounced();
-    }, 30);
-  }, [activePage, addPage, saveStateDebounced]);
-
   // Initialize from localStorage or with one page
   useEffect(() => {
     if (pagesRef.current.length !== 0) return;
@@ -255,38 +227,6 @@ export default function EditorContentArea({
   useEffect(() => {
     saveStateDebounced();
   }, [activePage, saveStateDebounced]);
-
-  // Save as HTML - flush pagination and sanitize output
-  const saveAsHtml = useCallback(() => {
-    const merged = sanitizeHtml(getMergedHTML());
-    const html = `<!doctype html><html><head><meta charset="utf-8"><title>Document</title><style>body{background:#ffffff;color:#111;margin:40px auto;max-width:800px;line-height:1.6;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif}h1,h2,h3,h4,h5,h6{line-height:1.25}</style></head><body>${merged}</body></html>`;
-    const blob = new Blob([html], { type: "text/html" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "document.html";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }, [getMergedHTML, sanitizeHtml]);
-
-  // Save as plain text
-  const saveAsText = useCallback(() => {
-    const merged = sanitizeHtml(getMergedHTML());
-    const temp = document.createElement("div");
-    temp.innerHTML = merged;
-    const text = (temp.textContent || temp.innerText || "").replace(/[\u200B\uFEFF]/g, "");
-    const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "document.txt";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }, [getMergedHTML, sanitizeHtml]);
 
   // Handle page change and sync editor content
   const handlePageChange = useCallback((newPageIndex) => {
@@ -474,7 +414,6 @@ export default function EditorContentArea({
             disabled={isPosting}
             style={{
               padding: "6px 12px",
-              border: "1px solid #e5e7eb",
               borderRadius: "4px",
               background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
               color: "white",

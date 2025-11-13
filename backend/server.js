@@ -10,7 +10,7 @@ import './config/db.js';  // This will load the DB connection
 dotenv.config();
 const app = express();
 
-const allowedOrigin = process.env.FRONTEND_ORIGIN || (process.env.NODE_ENV === 'production'
+const allowedOrigin = process.env.CORS_ORIGIN || process.env.FRONTEND_ORIGIN || (process.env.NODE_ENV === 'production'
   ? 'https://your-production-domain'
   : 'http://localhost:3000');
 app.use(cors({ origin: allowedOrigin, credentials: true }));

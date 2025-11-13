@@ -1,7 +1,7 @@
 "use client";
 import './EditorStyles.css'; // Remove @/ prefix
 import React from "react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useEditor } from "@tiptap/react";
 import { editorConfig } from './editorConfig';
 import AdvancedToolbar from './AdvancedToolbar';
@@ -38,7 +38,7 @@ export default function Editor() {
   const [findOpen, setFindOpen] = useState(false);
   const [findQuery, setFindQuery] = useState("");
   const [replaceQuery, setReplaceQuery] = useState("");
-  const [pastePlainNext, setPastePlainNext] = useState(false);
+  const [, setPastePlainNext] = useState(false);
   const [trackChanges, setTrackChanges] = useState(false);
   const [comments, setComments] = useState([]);
   const [commentModal, setCommentModal] = useState({ open: false, selection: null });
@@ -150,10 +150,16 @@ export default function Editor() {
     setTrackChanges
   });
 
-  const wordCompatibility = useWordCompatibility({
+  useWordCompatibility({
     editor,
     setToast: setToastMessage
   });
+
+  useEffect(() => {
+    if (toastMessage) {
+      toast.info(toastMessage);
+    }
+  }, [toastMessage]);
 
   if (!editor) {
     return (
