@@ -14,30 +14,48 @@ const app = express();
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:3001',
+  'http://localhost:5000',
   'https://blog-web-theta-one.vercel.app', // Your frontend URL
-  process.env.CORS_ORIGIN,
-  process.env.FRONTEND_ORIGIN
-].filter(Boolean);
+  'https://blog-web-842m.vercel.app', // Backend URL (for testing)
+];
+
+// Add environment variable origins if they exist
+if (process.env.CORS_ORIGIN) {
+  allowedOrigins.push(process.env.CORS_ORIGIN);
+}
+if (process.env.FRONTEND_ORIGIN) {
+  allowedOrigins.push(process.env.FRONTEND_ORIGIN);
+}
 
 console.log('Allowed Origins:', allowedOrigins);
 
 const corsOptions = {
-  origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
+  origin: function(origin, callback) {
+    console.log(`Incoming request origin: ${origin}`);
     
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) {
+      console.log('No origin detected - allowing request');
+      return callback(null, true);
+    }
+    
+    // Check if origin is in whitelist
     if (allowedOrigins.includes(origin)) {
+      console.log(`Origin ${origin} is allowed`);
       callback(null, true);
     } else {
-      console.warn(`CORS blocked request from origin: ${origin}`);
-      callback(null, true); // Allow for now, but log blocked requests
+      console.log(`Origin ${origin} is NOT in whitelist. Allowed: ${allowedOrigins.join(', ')}`);
+      // Still allow it but log for debugging
+      callback(null, true);
     }
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['Set-Cookie'],
   preflightContinue: false,
-  optionsSuccessStatus: 200
+  optionsSuccessStatus: 200,
+  maxAge: 86400
 };
 
 app.use(cors(corsOptions));
