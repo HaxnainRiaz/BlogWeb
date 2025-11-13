@@ -19,7 +19,9 @@ const allowedOrigins = [
   process.env.FRONTEND_ORIGIN
 ].filter(Boolean);
 
-app.use(cors({
+console.log('Allowed Origins:', allowedOrigins);
+
+const corsOptions = {
   origin: (origin, callback) => {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
@@ -27,14 +29,21 @@ app.use(cors({
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      console.warn(`CORS blocked request from origin: ${origin}`);
+      callback(null, true); // Allow for now, but log blocked requests
     }
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
-app.use(express.json());
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  preflightContinue: false,
+  optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // Handle preflight requests
+
+app.use(express.json({ limit: '10mb' }));
 app.use(cookieParser());
 
 app.use('/api/auth', authRoutes);

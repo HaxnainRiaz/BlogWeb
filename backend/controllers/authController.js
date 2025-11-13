@@ -5,6 +5,10 @@ import jwt from 'jsonwebtoken';
 export const signup = async (req, res) => {
   const { username, email, password } = req.body;
   try {
+    if (!username || !email || !password) {
+      return res.status(400).json({ error: 'All fields are required' });
+    }
+    
     const existingUser = await User.findOne({ $or: [{ username }, { email }] });
     if (existingUser) {
       return res.status(400).json({ error: 'Username or email already exists' });
@@ -14,7 +18,8 @@ export const signup = async (req, res) => {
     await user.save();
     res.status(201).json({ message: 'User registered successfully!' });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Signup error:', err);
+    res.status(500).json({ error: err.message || 'Signup failed' });
   }
 };
 
@@ -22,6 +27,10 @@ export const login = async (req, res) => {
   // Accept either email or username in the same field `email`
   const { email, password } = req.body;
   try {
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
+    }
+    
     const user = await User.findOne({ $or: [{ email }, { username: email }] });
     if (!user) return res.status(400).json({ error: 'Invalid credentials' });
     const valid = await bcrypt.compare(password, user.password);
@@ -37,7 +46,8 @@ export const login = async (req, res) => {
     });
     res.json({ message: 'Login successful' });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Login error:', err);
+    res.status(500).json({ error: err.message || 'Login failed' });
   }
 };
 
