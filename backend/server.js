@@ -10,10 +10,30 @@ import './config/db.js';  // This will load the DB connection
 dotenv.config();
 const app = express();
 
-const allowedOrigin = process.env.CORS_ORIGIN || process.env.FRONTEND_ORIGIN || (process.env.NODE_ENV === 'production'
-  ? 'https://your-production-domain'
-  : 'http://localhost:3000');
-app.use(cors({ origin: allowedOrigin, credentials: true }));
+// Allow multiple origins for CORS
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'https://blog-web-theta-one.vercel.app', // Your frontend URL
+  process.env.CORS_ORIGIN,
+  process.env.FRONTEND_ORIGIN
+].filter(Boolean);
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 app.use(cookieParser());
 
