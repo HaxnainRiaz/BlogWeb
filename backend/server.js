@@ -78,7 +78,29 @@ app.use('/api/blogs', blogRoutes);
 
 app.get('/', (req, res) => res.send('API Running'));
 
-const PORT = Number(process.env.PORT) || 4025;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Error:', err);
+  res.status(err.status || 500).json({
+    error: err.message || 'Internal server error',
+    status: err.status || 500
+  });
 });
+
+const PORT = Number(process.env.PORT) || 4025;
+const server = app.listen(PORT, () => {
+  console.log(`✅ Server running on port ${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`MONGO_URI: ${process.env.MONGO_URI ? 'Set' : 'NOT SET'}`);
+});
+
+// Handle server errors
+server.on('error', (err) => {
+  console.error('❌ Server error:', err);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+});
+

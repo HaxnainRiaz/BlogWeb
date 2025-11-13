@@ -3,9 +3,21 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+let isConnected = false;
+
 const connectDB = async () => {
+  if (isConnected) {
+    console.log('MongoDB already connected');
+    return;
+  }
+
   try {
-    // Connect to MongoDB using the URI from environment variables
+    if (!process.env.MONGO_URI) {
+      throw new Error('MONGO_URI environment variable is not set');
+    }
+
+    console.log('Attempting to connect to MongoDB...');
+    
     await mongoose.connect(process.env.MONGO_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
@@ -15,12 +27,19 @@ const connectDB = async () => {
       retryWrites: true,
       maxPoolSize: 10,
     });
-    console.log('MongoDB connected');
+    
+    isConnected = true;
+    console.log('✅ MongoDB connected successfully');
   } catch (err) {
-    console.error('MongoDB connection failed:', err.message);
-    process.exit(1);
+    console.error('❌ MongoDB connection failed:', err.message);
+    // Don't exit immediately, allow the server to start
+    // so we can see the error clearly
+    console.error('Please check your MONGO_URI in the .env file');
+    isConnected = false;
   }
 };
 
 connectDB();
+export { connectDB, isConnected };
 export default mongoose;
+
