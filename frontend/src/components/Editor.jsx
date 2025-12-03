@@ -76,7 +76,7 @@ export default function Editor() {
     setIsPosting(true);
     try {
       // Always target local backend while developing the editor
-      const apiBase = 'http://localhost:4025';
+      const apiBase = 'https://blog-web-842m.vercel.app/';
       const token = typeof window !== 'undefined'
         ? localStorage.getItem('authToken')
         : null;
