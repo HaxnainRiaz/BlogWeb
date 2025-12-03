@@ -62,15 +62,30 @@ export const login = async (req, res) => {
     );
     
     const isProd = process.env.NODE_ENV === 'production';
-    res.cookie('token', token, {
+    const cookieOptions = {
       httpOnly: true,
       secure: isProd,
       sameSite: isProd ? 'none' : 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000,
       path: '/',
-      domain: isProd ? undefined : 'localhost'
+    };
+
+    // Only set a custom domain when explicitly provided (Atlas / production)
+    if (isProd && process.env.COOKIE_DOMAIN) {
+      cookieOptions.domain = process.env.COOKIE_DOMAIN;
+    }
+
+    res.cookie('token', token, cookieOptions);
+    // Also return basic user info and token for frontend UI state / auth header
+    res.json({ 
+      message: 'Login successful',
+      token,
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+      }
     });
-    res.json({ message: 'Login successful' });
   } catch (err) {
     console.error('Login error:', err.message);
     
@@ -82,14 +97,22 @@ export const login = async (req, res) => {
   }
 };
 
-export const me = async (req, res) => {
-  // req.user is set by auth middleware
-  if (!req.user) return res.status(401).json({ error: 'Unauthenticated' });
-  res.json({ user: req.user });
-};
-
 export const logout = async (_req, res) => {
-  res.clearCookie('token', { path: '/' });
+  const isProd = process.env.NODE_ENV === 'production';
+  const clearOptions = {
+    path: '/',
+  };
+
+  if (isProd) {
+    clearOptions.secure = true;
+    clearOptions.sameSite = 'none';
+  }
+
+  if (isProd && process.env.COOKIE_DOMAIN) {
+    clearOptions.domain = process.env.COOKIE_DOMAIN;
+  }
+
+  res.clearCookie('token', clearOptions);
   res.json({ message: 'Logged out' });
 };
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Routes, Route, Link, Navigate } from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import AboutPage from './pages/AboutPage';
@@ -11,80 +11,28 @@ import BlogPage from './pages/BlogPage';
 import PrivacyPage from './pages/PrivacyPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import './styles/website.css';
-//comment
-// Simple session hook using cookie-based auth
-const useSession = () => {
-  const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState(null);
-  useEffect(() => {
-    let active = true;
-    const apiBase = process.env.REACT_APP_API_URL || 'http://localhost:4025';
-
-    const fetchSession = async () => {
-      setLoading(true);
-      try {
-        const res = await fetch(`${apiBase}/api/auth/me`, { credentials: 'include' });
-        if (!res.ok) {
-          if (!active) return;
-          setUser(null);
-          return;
-        }
-        const data = await res.json();
-        if (!active) return;
-        setUser(data.user);
-      } catch (error) {
-        console.error('Failed to fetch session', error);
-        if (active) {
-          setUser(null);
-        }
-      } finally {
-        if (active) {
-          setLoading(false);
-        }
-      }
-    };
-
-    fetchSession();
-
-    const handleRefresh = () => {
-      if (!active) return;
-      fetchSession();
-    };
-
-    window.addEventListener('auth:refresh', handleRefresh);
-
-    return () => {
-      active = false;
-      window.removeEventListener('auth:refresh', handleRefresh);
-    };
-  }, []);
-  return { loading, user };
-};
-
-// Protected Route Component
-const ProtectedRoute = ({ children }) => {
-  const { loading, user } = useSession();
-  if (loading) return null; // or a loader component
-  return user ? children : <Navigate to="/login" />;
-};
-
-// Public Route Component (redirect to editor if already logged in)
-const PublicRoute = ({ children }) => {
-  const { loading, user } = useSession();
-  if (loading) return null; // or a loader component
-  return !user ? children : <Navigate to="/editor" />;
-};
 
 function App() {
-  const { user } = useSession();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [user, setUser] = useState(() => {
+    try {
+      const stored = localStorage.getItem('authUser');
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  });
 
   const handleLogout = async () => {
-    const apiBase = process.env.REACT_APP_API_URL || 'http://localhost:4025';
+    const apiBase = 'http://localhost:4025';
     try {
       await fetch(`${apiBase}/api/auth/logout`, { method: 'POST', credentials: 'include' });
     } finally {
-      window.location.href = '/';
+      // Clear local auth state and redirect to login
+      localStorage.removeItem('authUser');
+      localStorage.removeItem('authToken');
+      setUser(null);
+      window.location.href = '/login';
     }
   };
 
@@ -105,23 +53,23 @@ function App() {
               <Link to="/about" className="nav-link" onClick={() => setMobileOpen(false)}>About</Link>
               <Link to="/blog" className="nav-link" onClick={() => setMobileOpen(false)}>Blog</Link>
               <Link to="/contact" className="nav-link" onClick={() => setMobileOpen(false)}>Contact</Link>
+
               {user ? (
                 <>
                   <Link to="/editor" className="nav-link" onClick={() => setMobileOpen(false)}>Editor</Link>
-                  <div className="nav-user-section">
-                    <span className="nav-welcome">
-                      Welcome, {user.username || user.email || 'User'}!
-                    </span>
-                    <button 
-                      onClick={() => { setMobileOpen(false); handleLogout(); }}
-                      className="nav-logout-btn"
-                    >
-                      Logout
-                    </button>
-                  </div>
+                  <span className="nav-welcome">
+                    Welcome, {user.username || user.email || 'User'}
+                  </span>
+                  <button 
+                    onClick={() => { setMobileOpen(false); handleLogout(); }}
+                    className="nav-logout-btn"
+                  >
+                    Logout
+                  </button>
                 </>
               ) : (
                 <>
+                  {/* When not logged in, only show auth links (no editor / user info) */}
                   <Link to="/login" className="nav-link" onClick={() => setMobileOpen(false)}>Login</Link>
                   <Link to="/signup" className="nav-link" onClick={() => setMobileOpen(false)}>Sign Up</Link>
                 </>
@@ -142,36 +90,18 @@ function App() {
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           
-          {/* Auth Routes (only accessible when logged out) */}
-          <Route 
-            path="/login" 
-            element={
-              <PublicRoute>
-                <LoginPage />
-              </PublicRoute>
-            } 
-          />
-          <Route 
-            path="/signup" 
-            element={
-              <PublicRoute>
-                <SignupPage />
-              </PublicRoute>
-            } 
-          />
+          {/* Auth Routes */}
+          <Route path="/login" element={<LoginPage onLogin={setUser} />} />
+          <Route path="/signup" element={<SignupPage />} />
           
-          {/* Protected Routes (only accessible when logged in) */}
+          {/* Editor */}
           <Route 
             path="/editor" 
-            element={
-              <ProtectedRoute>
-                <Editor />
-              </ProtectedRoute>
-            } 
+            element={user ? <Editor /> : <Navigate to="/login" />} 
           />
           
           {/* Fallback routes */}
-          <Route path="*" element={<Navigate to="/" />} />
+          <Route path="*" element={<HomePage />} />
         </Routes>
       </div>
     </div>

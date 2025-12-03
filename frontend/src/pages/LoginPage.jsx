@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-const LoginPage = () => {
+const LoginPage = ({ onLogin }) => {
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -21,7 +21,7 @@ const LoginPage = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const apiBase = process.env.REACT_APP_API_URL || 'http://localhost:4025';
+      const apiBase = 'http://localhost:4025';
       const res = await fetch(`${apiBase}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -35,12 +35,22 @@ const LoginPage = () => {
       if (!res.ok) {
         throw new Error(data?.error || 'Login failed');
       }
-      // Session is stored in httpOnly cookie by backend; nothing to store on client
-      toast.success('Login successful! Redirecting...');
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new Event('auth:refresh'));
+      // Store token + basic user info in localStorage for navbar / blog posting
+      if (data.token) {
+        localStorage.setItem('authToken', data.token);
       }
-      setTimeout(() => navigate('/editor'), 1000);
+      if (data.user) {
+        localStorage.setItem('authUser', JSON.stringify(data.user));
+        if (typeof onLogin === 'function') {
+          onLogin(data.user);
+        }
+      }
+      toast.success('Login successful! Redirecting...');
+      navigate('/editor');
+      // if (typeof window !== 'undefined') {
+      //   window.dispatchEvent(new Event('auth:refresh'));
+      // }
+      // setTimeout(() => navigate('/editor'), 1000);
     } catch (err) {
       toast.error(err.message);
     }

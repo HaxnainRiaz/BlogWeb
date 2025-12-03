@@ -9,7 +9,15 @@ const BlogPage = ({ currentUser = null }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const apiBase = process.env.REACT_APP_API_URL || 'http://localhost:4025';
+  // Force all blog API calls to hit local backend during development
+  const apiBase = 'http://localhost:4025';
+
+  const getAuthHeaders = () => {
+    if (typeof window === 'undefined') return {};
+    const token = localStorage.getItem('authToken');
+    if (!token) return {};
+    return { Authorization: `Bearer ${token}` };
+  };
 
   const currentUserId = useMemo(() => currentUser?.id || currentUser?._id || null, [currentUser]);
 
@@ -35,6 +43,7 @@ const BlogPage = ({ currentUser = null }) => {
     try {
       const res = await fetch(`${apiBase}/api/blogs`, {
         credentials: 'include',
+        headers: getAuthHeaders(),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -107,6 +116,10 @@ const BlogPage = ({ currentUser = null }) => {
       const res = await fetch(`${apiBase}/api/blogs/${blogId}`, {
         method: 'DELETE',
         credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeaders(),
+        },
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {

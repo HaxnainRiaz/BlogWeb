@@ -5,6 +5,37 @@ dotenv.config();
 
 let isConnected = false;
 
+// Build a valid MongoDB URI even if the base URI has no DB name
+const buildMongoURI = () => {
+  const base = process.env.MONGO_URI;
+
+  if (!base) {
+    throw new Error('MONGO_URI environment variable is not set');
+  }
+
+  // If the URI already has a path after .net, just return it
+  try {
+    const url = new URL(base);
+    if (url.pathname && url.pathname !== '/' && url.pathname.length > 1) {
+      return base;
+    }
+  } catch {
+    // If URL parsing fails (shouldn't for a valid Atlas URI), just fall back to base
+    return base;
+  }
+
+  // If no db name in path, append one (defaults to "myblog")
+  const dbName = process.env.DB_NAME || 'myblog';
+
+  if (base.endsWith('/')) {
+    return `${base}${dbName}`;
+  }
+
+  const [uriWithoutQuery, query] = base.split('?');
+  const withDb = `${uriWithoutQuery}/${dbName}`;
+  return query ? `${withDb}?${query}` : withDb;
+};
+
 const connectDB = async () => {
   if (isConnected) {
     console.log('📦 MongoDB already connected');
@@ -12,41 +43,44 @@ const connectDB = async () => {
   }
 
   try {
-    if (!process.env.MONGO_URI) {
-      throw new Error('MONGO_URI environment variable is not set');
-    }
+    const mongoURI = buildMongoURI();
 
     console.log('🔄 Attempting to connect to MongoDB...');
+    console.log(`🔗 Using Mongo URI: ${mongoURI.replace(/:\/\/(.*)@/, '://<hidden>@')}`);
     
-    await mongoose.connect(process.env.MONGO_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      // Connection timeout settings - reduced for faster feedback
-      serverSelectionTimeoutMS: 3000,      // Reduced from 5000
-      socketTimeoutMS: 30000,               // Reduced from 45000
-      connectTimeoutMS: 5000,               // Reduced from 10000
-      // Connection pooling for better performance
-      maxPoolSize: 5,                       // Reduced from 10 for stability
+    await mongoose.connect(mongoURI, {
+      // Atlas requires TLS
+      ssl: true,
+      // Connection timeout settings - slightly higher for Atlas
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 30000,
+      connectTimeoutMS: 10000,
+      // Connection pooling
+      maxPoolSize: 5,
       minPoolSize: 1,
-      // Retry settings for stability
+      // Retry settings
       retryWrites: true,
       retryReads: true,
-      maxStalenessSeconds: 120,
-      // Heartbeat settings to maintain connection
-      serverMonitoringMode: 'auto',
+      // Heartbeat & buffering
       heartbeatFrequencyMS: 10000,
-      // Disable timeouts on operations
       bufferCommands: true,
-      bufferMaxentries: 0,  // Buffer indefinitely until connected
-      family: 4,            // Use IPv4
+      family: 4,
+      // Explicit dbName in case the URI had none
+      dbName: process.env.DB_NAME || 'myblog',
     });
     
     isConnected = true;
     console.log('✅ MongoDB connected successfully');
-    console.log(`📊 Connection pool size: ${mongoose.connection.getClient().topology.s.pool.totalConnectionCount}`);
+    if (mongoose.connection.getClient && mongoose.connection.getClient().topology?.s?.pool) {
+      console.log(
+        `📊 Connection pool size: ${mongoose.connection.getClient().topology.s.pool.totalConnectionCount}`
+      );
+    }
   } catch (err) {
     console.error('❌ MongoDB connection failed:', err.message);
-    console.error('⚠️  Please check your MONGO_URI in the .env file');
+    console.error(
+      '⚠️  Please check your MONGO_URI / DB_NAME and MongoDB Atlas configuration (IP whitelist, user, password).'
+    );
     isConnected = false;
     // Retry connection after 5 seconds
     setTimeout(() => {

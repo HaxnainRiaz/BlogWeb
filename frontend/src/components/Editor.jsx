@@ -75,10 +75,20 @@ export default function Editor() {
 
     setIsPosting(true);
     try {
-      const apiBase = process.env.REACT_APP_API_URL || 'http://localhost:4025';
+      // Always target local backend while developing the editor
+      const apiBase = 'http://localhost:4025';
+      const token = typeof window !== 'undefined'
+        ? localStorage.getItem('authToken')
+        : null;
+
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       const res = await fetch(`${apiBase}/api/blogs`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         credentials: 'include',
         body: JSON.stringify({ title, content }),
       });

@@ -40,7 +40,7 @@ const SignupPage = () => {
         }
 
         try {
-            const apiBase = process.env.REACT_APP_API_URL || 'http://localhost:4025';
+            const apiBase =  'http://localhost:4025';
             const res = await fetch(`${apiBase}/api/auth/signup`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

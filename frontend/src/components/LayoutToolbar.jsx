@@ -3,11 +3,7 @@ import { Table, Image, Link2, Minus, Smile, Heading1, Heading2, Heading3, Pilcro
 
 const LayoutToolbar = ({ editor, onImageUpload }) => {
   if (!editor) return null;
-  const insertTable = () => {
-    editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
-  };
-
-  const insertImage = () => {
+    const insertImage = () => {
     if (onImageUpload) {
       onImageUpload();
     } else {
@@ -66,9 +62,6 @@ const LayoutToolbar = ({ editor, onImageUpload }) => {
 
       {/* Insert Elements */}
       <div className="toolbar-group">
-        <button className="format-btn" onClick={insertTable} title="Insert Table">
-          <Table size={16} />
-        </button>
         <button className="format-btn" onClick={insertImage} title="Insert Image">
           <Image size={16} />
         </button>
