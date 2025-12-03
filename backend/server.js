@@ -16,7 +16,7 @@ const allowedOrigins = [
   'http://localhost:3001',
   'http://localhost:5000',
   'https://blog-web-theta-one.vercel.app', // Your frontend URL
-  'https://blog-web-842m.vercel.app', // Backend URL (for testing)
+  'http://localhost:4025', // Backend URL (for testing)
 ];
 
 // Add environment variable origins if they exist

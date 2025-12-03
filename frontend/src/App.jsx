@@ -24,7 +24,7 @@ function App() {
   });
 
   const handleLogout = async () => {
-    const apiBase = 'https://blog-web-842m.vercel.app';
+    const apiBase = 'http://localhost:4025';
     try {
       await fetch(`${apiBase}/api/auth/logout`, { method: 'POST', credentials: 'include' });
     } finally {

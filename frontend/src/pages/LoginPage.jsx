@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
+// Accept onLogin from App so we can update global user state
 const LoginPage = ({ onLogin }) => {
   const [formData, setFormData] = useState({
     email: '',
@@ -21,8 +22,7 @@ const LoginPage = ({ onLogin }) => {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const apiBase = 'https://blog-web-842m.vercel.app';
-      
+      const apiBase = 'http://localhost:4025';
       const res = await fetch(`${apiBase}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -36,7 +36,7 @@ const LoginPage = ({ onLogin }) => {
       if (!res.ok) {
         throw new Error(data?.error || 'Login failed');
       }
-      // Store token + basic user info in localStorage for navbar / blog posting
+      // Store token + user so navbar and editor auth work
       if (data.token) {
         localStorage.setItem('authToken', data.token);
       }
@@ -46,6 +46,7 @@ const LoginPage = ({ onLogin }) => {
           onLogin(data.user);
         }
       }
+
       toast.success('Login successful! Redirecting...');
       navigate('/editor');
       // if (typeof window !== 'undefined') {

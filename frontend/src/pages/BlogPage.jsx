@@ -10,7 +10,7 @@ const BlogPage = ({ currentUser = null }) => {
   const [error, setError] = useState(null);
 
   // Force all blog API calls to hit local backend during development
-  const apiBase = 'https://blog-web-842m.vercel.app';
+  const apiBase = 'http://localhost:4025';
 
   const getAuthHeaders = () => {
     if (typeof window === 'undefined') return {};

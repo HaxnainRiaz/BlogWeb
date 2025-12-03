@@ -40,7 +40,7 @@ const SignupPage = () => {
         }
 
         try {
-            const apiBase =  'https://blog-web-842m.vercel.app';
+            const apiBase =  'http://localhost:4025';
             const res = await fetch(`${apiBase}/api/auth/signup`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
